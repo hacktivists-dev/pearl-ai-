@@ -9,6 +9,9 @@ const sendBtn = document.getElementById('send-btn');
 const recentChatsList = document.getElementById('recent-chats-list');
 const newChatBtn = document.getElementById('new-chat-btn');
 const clearChatBtn = document.getElementById('clear-chat-btn');
+const profileBtn = document.getElementById('profile-btn');
+const userNameInput = document.getElementById('user-name-input');
+const userAvatar = document.getElementById('user-avatar');
 
 async function appendMessage(role, content) {
     const wrapper = document.createElement('div');
@@ -219,6 +222,34 @@ chatContainer.addEventListener('click', async (e) => {
         }, 2000);
     } catch (err) {
         console.error('Failed to copy text: ', err);
+    }
+});
+
+// Profile Persistence & Interaction
+const savedName = localStorage.getItem('pearl_user_name');
+if (savedName) {
+    userNameInput.value = savedName;
+    userAvatar.textContent = savedName.charAt(0).toUpperCase();
+}
+
+userNameInput.addEventListener('input', (e) => {
+    const name = e.target.value.trim();
+    localStorage.setItem('pearl_user_name', name);
+    userAvatar.textContent = name ? name.charAt(0).toUpperCase() : 'U';
+});
+
+userNameInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userNameInput.focus();
+});
+
+profileBtn.addEventListener('click', (e) => {
+    // Only trigger if not clicking the input itself
+    if (e.target.id !== 'user-name-input') {
+        if (confirm('Would you like to logout?')) {
+            localStorage.removeItem('pearl_session_active');
+            window.location.href = '/login';
+        }
     }
 });
 
