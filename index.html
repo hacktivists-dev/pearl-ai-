@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,11 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        if (!localStorage.getItem('pearl_session_active')) {
+            window.location.href = '/login';
+        }
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8faff; color: #1e293b; }
         
@@ -94,12 +100,13 @@
         </div>
 
         <div class="p-4 mt-auto border-t border-slate-100">
-            <div class="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold">JD</div>
+            <div id="profile-btn" class="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-100 rounded-xl cursor-pointer transition-all border border-transparent hover:border-slate-200 group">
+                <div id="user-avatar" class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-sm group-hover:scale-105 transition-transform">U</div>
                 <div class="flex-1 overflow-hidden">
-                    <p class="text-[10px] text-slate-500 uppercase">Pro Member</p>
+                    <input id="user-name-input" type="text" placeholder="Your Name" class="bg-transparent text-sm font-semibold text-slate-700 truncate w-full border-none focus:ring-0 p-0 outline-none" autocomplete="off">
+                    <p class="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Pro Plan</p>
                 </div>
-                <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
+                <i data-lucide="more-vertical" class="w-4 h-4 text-slate-400 group-hover:text-slate-600"></i>
             </div>
         </div>
     </aside>
