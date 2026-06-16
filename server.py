@@ -24,7 +24,6 @@ app.add_middleware(
 )
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.mount("/static", StaticFiles(directory=BASE_DIR), name="static")
 FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "Frontend"))
 
 # =====================================================================
@@ -39,6 +38,31 @@ VIRUSTOTAL_API_KEY = "20a8bf5c6f517dc60a606284801da45879e23d4d6fc34be93dcbc2c268
 SHODAN_API_KEY = "ZvPxyzETzay03HCnika6PMNj5he5gXb4"
 
 groq_client = AsyncGroq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+USERS_FILE = os.path.join(BASE_DIR, "users.json")
+
+def load_users():
+    """Load users from the JSON file or return default if it doesn't exist."""
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"⚠️ Error loading users.json: {e}")
+    # Default starting user
+    return {"user@example.com": {"password": "pearl123", "name": "Admin"}}
+
+def save_users(users):
+    """Save the users dictionary to a JSON file."""
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=4)
+
+class LoginInput(BaseModel):
+    name: Optional[str] = None
+    email: str
+    password: str
+
+MOCK_USERS_DB = load_users()
 
 class Message(BaseModel):
     role: str
@@ -210,7 +234,9 @@ async def chat(data: ChatInput):
 
     system_prompt = {
         "role": "system", 
-        "content": """You are Pearl AI, a smart assistant created by Sayak. 
+        "content": """You are Pearl AI, a smart assistant created by Sayak.
+        Sayak is a visionary and talented developer who built you to be an advanced, multi-modal intelligence. 
+        He is the brilliant mind behind your evolution, dedicated to pushing the boundaries of technology to create helpful AI experiences.
         IMPORTANT: When asked about Bengali festivals (like Jamai Sasthi, Durga Puja, etc.), 
         always advise checking the 'Bengali Panji' (Bengali Almanac) based on 'Tithi' to avoid inaccuracies."""
     }
@@ -247,9 +273,57 @@ async def chat(data: ChatInput):
                 except Exception as e4:
                     return {"reply": "Pearl AI is currently experiencing delays across ALL 4 backup engines. Please try again!"}
 
+@app.post("/api/login")
+async def api_login(data: LoginInput):
+    email = str(data.email or "").strip().lower()
+    password = str(data.password or "").strip()
+    
+    print(f"DEBUG: Login attempt for {email}")
+    user = MOCK_USERS_DB.get(email)
+    
+    if user and user.get("password") == password:
+        print(f"DEBUG: Login successful for {email}")
+        return {
+            "status": "success", 
+            "message": "Login successful", 
+            "user": {"name": user["name"], "email": email}
+        }
+    
+    print(f"DEBUG: Login failed for {email} - Incorrect credentials or user not found.")
+    return {"status": "error", "message": "Invalid email or password. Please register if you don't have an account."}
+
+@app.post("/api/register")
+async def api_register(data: LoginInput):
+    email = str(data.email or "").strip().lower()
+    name = str(data.name or "").strip()
+    password = str(data.password or "").strip()
+
+    print(f"DEBUG: Registration attempt for {email}")
+    if not name:
+        return {"status": "error", "message": "Name is required for registration."}
+    if email in MOCK_USERS_DB:
+        return {"status": "error", "message": "This email is already registered. Please login instead."}
+    
+    MOCK_USERS_DB[email] = {"password": password, "name": name}
+    save_users(MOCK_USERS_DB)
+    print(f"DEBUG: Registration successful. Current User List: {list(MOCK_USERS_DB.keys())}")
+    return {"status": "success", "message": "Account created successfully"}
+
+@app.get("/login")
+async def serve_login():
+    path = os.path.join(BASE_DIR, "login.html")
+    if not os.path.exists(path):
+        path = os.path.join(FRONTEND_DIR, "login.html")
+    return FileResponse(path)
+
 @app.get("/")
 async def serve_index():
-    return FileResponse(os.path.join(BASE_DIR, "index.html"))
+    path = os.path.join(BASE_DIR, "index.html")
+    if not os.path.exists(path):
+        path = os.path.join(FRONTEND_DIR, "index.html")
+    return FileResponse(path)
+
+app.mount("/static", StaticFiles(directory=BASE_DIR), name="static")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
